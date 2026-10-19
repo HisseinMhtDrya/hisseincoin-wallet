@@ -1,0 +1,805 @@
+
+/* ==================================================
+   HISSEINCOIN — DESIGN FINTECH PREMIUM
+   Thème : bleu nuit, or et vert
+   Responsive : ordinateur, tablette et téléphone
+   ================================================== */
+
+:root {
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  color: #f8faff;
+  background: #080d1b;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+
+  --bg: #080d1b;
+  --surface: #111a2d;
+  --surface-light: #17233b;
+  --border: rgba(164, 180, 218, 0.15);
+  --text: #f8faff;
+  --muted: #9caac5;
+
+  --gold: #f6cf65;
+  --gold-light: #ffe7a0;
+  --gold-dark: #b8862d;
+
+  --violet: #8b7aff;
+  --blue: #5577ff;
+  --cyan: #69e0ef;
+
+  --success: #6ee7b7;
+  --success-dark: #047857;
+  --danger: #ff858f;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  min-width: 320px;
+  min-height: 100%;
+  scroll-behavior: smooth;
+}
+
+body {
+  position: relative;
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  overflow-x: hidden;
+
+  background:
+    radial-gradient(
+      ellipse at 10% 0%,
+      rgba(91, 77, 214, 0.17),
+      transparent 38%
+    ),
+    radial-gradient(
+      ellipse at 95% 35%,
+      rgba(36, 132, 190, 0.12),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      #080d1b 0%,
+      #0b1223 55%,
+      #0a1020 100%
+    );
+
+  color: var(--text);
+  font-family: Inter, "Segoe UI", Roboto, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+body::before {
+  content: "";
+  position: fixed;
+  top: -170px;
+  right: -150px;
+  width: 380px;
+  height: 380px;
+  border-radius: 50%;
+  background: rgba(101, 87, 255, 0.09);
+  filter: blur(90px);
+  pointer-events: none;
+  z-index: 0;
+}
+
+button,
+input {
+  font: inherit;
+}
+
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+input:focus-visible {
+  outline: 2px solid var(--cyan);
+  outline-offset: 4px;
+}
+
+/* ==================================================
+   CONTENEUR PRINCIPAL
+   ================================================== */
+
+.wallet {
+  position: relative;
+  z-index: 1;
+  width: min(100% - 36px, 510px);
+  margin: 42px auto;
+  animation: appear 0.55s ease both;
+}
+
+/* ==================================================
+   EN-TÊTE ET IDENTITÉ HISSEINCOIN
+   ================================================== */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.coin-logo {
+  position: relative;
+  display: grid;
+  flex: 0 0 54px;
+  place-items: center;
+  width: 54px;
+  height: 54px;
+  overflow: hidden;
+
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 18px;
+
+  background: linear-gradient(
+    135deg,
+    #a394ff 0%,
+    #6959ef 52%,
+    #3978ea 100%
+  );
+
+  box-shadow:
+    0 8px 28px rgba(102, 83, 255, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35);
+
+  color: white;
+  font-size: 28px;
+  font-weight: 900;
+  letter-spacing: -2px;
+}
+
+.brand {
+  min-width: 0;
+}
+
+.brand h1 {
+  margin: 0;
+  color: #ffffff;
+  font-size: clamp(20px, 5vw, 24px);
+  font-weight: 800;
+  letter-spacing: -0.8px;
+}
+
+.brand p,
+.hint {
+  margin: 5px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+/* ==================================================
+   BADGE DU RÉSEAU
+   ================================================== */
+
+.network {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-left: auto;
+  padding: 9px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 30px;
+
+  background: rgba(28, 39, 61, 0.8);
+  color: #cbd5e1;
+
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.network::before {
+  content: "";
+  flex: 0 0 7px;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #94a3b8;
+}
+
+/* Vert lorsque Sepolia est bien sélectionné */
+
+.network-connected {
+  border-color: rgba(110, 231, 183, 0.4);
+  background: rgba(5, 150, 105, 0.16);
+  color: #a7f3d0;
+}
+
+.network-connected::before {
+  background: var(--success);
+  box-shadow: 0 0 10px rgba(110, 231, 183, 0.7);
+}
+
+/* Orange lorsqu'un autre réseau est sélectionné */
+
+.network-warning {
+  border-color: rgba(255, 190, 105, 0.35);
+  background: rgba(180, 100, 25, 0.14);
+  color: #ffd19b;
+}
+
+.network-warning::before {
+  background: #ffbf69;
+  box-shadow: 0 0 10px rgba(255, 191, 105, 0.5);
+}
+
+/* ==================================================
+   CARTE PRINCIPALE DU SOLDE
+   ================================================== */
+
+.balance-card {
+  position: relative;
+  overflow: hidden;
+  padding: 28px;
+
+  border: 1px solid rgba(246, 207, 101, 0.25);
+  border-radius: 25px;
+
+  background:
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(132, 117, 255, 0.27),
+      transparent 48%
+    ),
+    radial-gradient(
+      circle at 0% 100%,
+      rgba(246, 207, 101, 0.08),
+      transparent 42%
+    ),
+    linear-gradient(
+      135deg,
+      #20264a 0%,
+      #171e3b 48%,
+      #112d48 100%
+    );
+
+  box-shadow:
+    0 22px 55px rgba(0, 0, 0, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.balance-card::after {
+  content: "H";
+  position: absolute;
+  top: -40px;
+  right: 8px;
+
+  color: rgba(255, 255, 255, 0.035);
+  font-size: 210px;
+  font-weight: 900;
+  line-height: 1;
+
+  pointer-events: none;
+}
+
+.balance-card > p:first-child {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+
+  color: #cbd3f6;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* Solde en OR */
+
+.balance-card h2 {
+  position: relative;
+  z-index: 1;
+
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 10px;
+
+  margin: 17px 0 8px;
+
+  color: var(--gold);
+  font-size: clamp(34px, 8vw, 48px);
+  font-weight: 850;
+  letter-spacing: -1.7px;
+  line-height: 1.2;
+
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+
+  text-shadow: 0 0 22px rgba(246, 207, 101, 0.16);
+}
+
+/* Symbole HSC en or clair */
+
+.balance-card h2 span {
+  color: var(--gold-light);
+  font-size: 20px;
+  font-weight: 750;
+  letter-spacing: 0;
+}
+
+.balance-card .hint {
+  position: relative;
+  z-index: 1;
+  color: #aebce0;
+}
+
+/* ==================================================
+   BOUTON META MASK
+   ================================================== */
+
+.connect {
+  position: relative;
+  z-index: 1;
+
+  display: block;
+  width: 100%;
+  margin-top: 25px;
+  padding: 14px 18px;
+  overflow-wrap: anywhere;
+
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 13px;
+
+  background: rgba(255, 255, 255, 0.085);
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 700;
+
+  cursor: pointer;
+
+  transition:
+    background 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.2s ease;
+}
+
+.connect:hover {
+  border-color: rgba(255, 255, 255, 0.38);
+  background: rgba(255, 255, 255, 0.15);
+}
+
+/* Bouton VERT si le compte est connecté sur Sepolia */
+
+.connect.connect-success {
+  border: 1px solid rgba(110, 231, 183, 0.55);
+
+  background: linear-gradient(
+    135deg,
+    #059669 0%,
+    #047857 100%
+  );
+
+  color: #ffffff;
+
+  box-shadow:
+    0 8px 24px rgba(5, 150, 105, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.connect.connect-success:hover {
+  border-color: #6ee7b7;
+
+  background: linear-gradient(
+    135deg,
+    #10b981 0%,
+    #059669 100%
+  );
+
+  box-shadow: 0 10px 28px rgba(5, 150, 105, 0.32);
+  transform: translateY(-1px);
+}
+
+/* ==================================================
+   BOUTONS ENVOYER ET RECEVOIR
+   ================================================== */
+
+.actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin: 20px 0;
+}
+
+.actions button {
+  min-height: 64px;
+  padding: 17px 12px;
+
+  border: 1px solid var(--border);
+  border-radius: 17px;
+
+  background: linear-gradient(
+    145deg,
+    rgba(26, 38, 64, 0.95),
+    rgba(17, 27, 47, 0.96)
+  );
+
+  color: #f5f7ff;
+  font-size: 15px;
+  font-weight: 750;
+
+  box-shadow: 0 7px 20px rgba(0, 0, 0, 0.12);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.actions button:hover {
+  transform: translateY(-2px);
+  border-color: rgba(139, 122, 255, 0.55);
+  background: #202c4a;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.18);
+}
+
+.actions button:active {
+  transform: translateY(0);
+}
+
+/* ==================================================
+   PANNEAUX ENVOYER ET RECEVOIR
+   ================================================== */
+
+.panel {
+  margin-top: 20px;
+  padding: 25px;
+
+  border: 1px solid var(--border);
+  border-radius: 22px;
+
+  background: linear-gradient(
+    145deg,
+    rgba(20, 30, 51, 0.96),
+    rgba(14, 23, 41, 0.98)
+  );
+
+  box-shadow:
+    0 16px 35px rgba(0, 0, 0, 0.16),
+    inset 0 1px 0 rgba(255, 255, 255, 0.025);
+}
+
+.panel h3 {
+  margin: 0 0 22px;
+  color: #f6f7ff;
+  font-size: 19px;
+  font-weight: 750;
+  letter-spacing: -0.35px;
+}
+
+.panel p {
+  color: #bdc8df;
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.panel label {
+  display: block;
+  margin: 19px 0 9px;
+  color: #c3cde2;
+  font-size: 13px;
+  font-weight: 650;
+}
+
+/* Champs de saisie */
+
+.panel input {
+  display: block;
+  width: 100%;
+  min-width: 0;
+  padding: 14px 15px;
+
+  border: 1px solid #35435f;
+  border-radius: 12px;
+  outline: none;
+
+  background: #0a1121;
+  color: #f8faff;
+  font-size: 14px;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.panel input::placeholder {
+  color: #677792;
+}
+
+.panel input:focus {
+  border-color: #9181ff;
+  background: #0d162b;
+  box-shadow: 0 0 0 4px rgba(139, 122, 255, 0.12);
+}
+
+.panel input[type="number"] {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Boutons des panneaux */
+
+.panel button {
+  display: block;
+  width: 100%;
+  margin-top: 23px;
+  padding: 15px 18px;
+
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 13px;
+
+  background: linear-gradient(
+    110deg,
+    #7967f5 0%,
+    #635cf0 45%,
+    #4778f5 100%
+  );
+
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 750;
+
+  box-shadow: 0 8px 22px rgba(101, 89, 241, 0.2);
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    filter 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.panel button:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+  box-shadow: 0 12px 28px rgba(101, 89, 241, 0.3);
+}
+
+.panel button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* Boutons désactivés par les protections */
+
+button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+  filter: saturate(0.4);
+  box-shadow: none;
+}
+
+.panel button:disabled:hover {
+  transform: none;
+  filter: saturate(0.4);
+  box-shadow: none;
+}
+
+/* ==================================================
+   ADRESSE DE RÉCEPTION
+   ================================================== */
+
+.address {
+  display: block;
+  width: 100%;
+  margin-top: 12px;
+  padding: 14px;
+  overflow-wrap: anywhere;
+
+  border: 1px solid var(--border);
+  border-radius: 12px;
+
+  background: #0a1121;
+  color: #bdb4ff;
+
+  font-family: "SFMono-Regular", Consolas, monospace;
+  font-size: 12px;
+  line-height: 1.8;
+
+  user-select: text;
+}
+
+/* ==================================================
+   BOUTON CHANGER POUR SEPOLIA
+   ================================================== */
+
+.secondary {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px 16px;
+
+  border: 1px solid #35425f;
+  border-radius: 12px;
+
+  background: rgba(18, 29, 49, 0.65);
+  color: #dce4f7;
+
+  font-size: 13px;
+  font-weight: 650;
+
+  cursor: pointer;
+
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+
+.secondary:hover {
+  border-color: #7e71f1;
+  background: #182540;
+}
+
+/* ==================================================
+   MESSAGES
+   ================================================== */
+
+.message {
+  margin-top: 17px;
+  padding: 14px 16px;
+  overflow-wrap: anywhere;
+
+  border: 1px solid rgba(139, 122, 255, 0.2);
+  border-radius: 12px;
+
+  background: rgba(93, 83, 200, 0.12);
+  color: #d9d5ff;
+
+  font-size: 13px;
+  line-height: 1.7;
+}
+
+/* ==================================================
+   ALERTES DE SÉCURITÉ
+   ================================================== */
+
+.warning {
+  margin: 12px 0 16px;
+  padding: 14px 15px;
+  overflow-wrap: anywhere;
+
+  border: 1px solid rgba(255, 175, 94, 0.38);
+  border-radius: 12px;
+
+  background: linear-gradient(
+    135deg,
+    rgba(124, 67, 20, 0.22),
+    rgba(99, 47, 29, 0.15)
+  );
+
+  color: #ffd19b !important;
+  font-size: 13px !important;
+  line-height: 1.7 !important;
+}
+
+/* ==================================================
+   PIED DE PAGE
+   ================================================== */
+
+footer {
+  margin-top: 30px;
+  padding: 20px 8px 10px;
+
+  border-top: 1px solid rgba(164, 180, 218, 0.1);
+
+  color: #aab7d0;
+  text-align: center;
+  font-size: 12px;
+  line-height: 1.9;
+}
+
+footer p {
+  margin: 5px 0 0;
+  color: #71809c;
+}
+
+/* ==================================================
+   ANIMATION
+   ================================================== */
+
+@keyframes appear {
+  from {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ==================================================
+   ADAPTATION AUX PETITS ÉCRANS
+   ================================================== */
+
+@media (max-width: 480px) {
+  .wallet {
+    width: calc(100% - 26px);
+    margin: 23px auto;
+  }
+
+  .topbar {
+    gap: 11px;
+    margin-bottom: 22px;
+  }
+
+  .coin-logo {
+    flex-basis: 47px;
+    width: 47px;
+    height: 47px;
+    border-radius: 15px;
+    font-size: 24px;
+  }
+
+  .brand h1 {
+    font-size: 19px;
+  }
+
+  .brand p {
+    font-size: 12px;
+  }
+
+  .network {
+    padding: 8px 9px;
+    font-size: 11px;
+  }
+
+  .balance-card {
+    padding: 22px 20px;
+    border-radius: 21px;
+  }
+
+  .balance-card h2 {
+    font-size: clamp(31px, 8.5vw, 42px);
+    letter-spacing: -1.2px;
+  }
+
+  .balance-card h2 span {
+    font-size: 18px;
+  }
+
+  .actions {
+    gap: 10px;
+    margin: 15px 0;
+  }
+
+  .actions button {
+    min-height: 58px;
+    padding: 14px 8px;
+    font-size: 14px;
+  }
+
+  .panel {
+    padding: 20px 17px;
+    border-radius: 19px;
+  }
+
+  .panel h3 {
+    font-size: 18px;
+  }
+}
+
+/* ==================================================
+   ACCESSIBILITÉ
+   ================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

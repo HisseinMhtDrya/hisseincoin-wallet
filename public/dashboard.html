@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="fr" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HisseinCoin (HSC) — Portefeuille Web3</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script>
+    tailwind.config = { darkMode: 'class', theme: { extend: {
+      colors: { dark: { 900:'#080d1b', 800:'#111a2d', 700:'#202c43', 600:'#35435f' }, brand:{500:'#8b7aff',600:'#6959ef',accent:'#5577ff'}, gold:{400:'#f6cf65',300:'#ffe7a0'} }
+    } } };
+  </script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+  <style>
+    :root { color-scheme:dark; --gold:#f6cf65; --gold-light:#ffe7a0; }
+    * { box-sizing:border-box; }
+    body { margin:0; font-family:Inter,system-ui,sans-serif; background:radial-gradient(ellipse at 10% 0%,rgba(91,77,214,.17),transparent 38%),radial-gradient(ellipse at 95% 35%,rgba(36,132,190,.12),transparent 32%),#080d1b; color:#f8faff; }
+    button,input { font:inherit; }
+    button:focus-visible,input:focus-visible { outline:2px solid #69e0ef; outline-offset:3px; }
+    .shell { min-height:100vh; }
+    .sidebar { width:260px; background:rgba(17,26,45,.97); border-right:1px solid rgba(164,180,218,.12); }
+    .nav-btn { display:flex; gap:12px; align-items:center; width:100%; padding:12px 14px; border-radius:12px; color:#9caac5; text-align:left; transition:.18s; }
+    .nav-btn:hover { background:rgba(255,255,255,.05); color:#fff; }
+    .nav-btn.active { background:linear-gradient(110deg,rgba(105,89,239,.95),rgba(71,120,245,.85)); color:white; box-shadow:0 8px 22px rgba(90,80,220,.18); }
+    .brandmark { display:grid; place-items:center; width:42px;height:42px;border-radius:14px;background:linear-gradient(135deg,#a394ff,#6959ef 52%,#3978ea);font-size:22px;font-weight:900;box-shadow:0 8px 24px #6553ff40; }
+    .card { background:linear-gradient(145deg,rgba(20,30,51,.96),rgba(14,23,41,.98)); border:1px solid rgba(164,180,218,.14); border-radius:18px; box-shadow:0 14px 34px #0002; }
+    .metric { position:relative; overflow:hidden; background:linear-gradient(145deg,rgba(20,30,51,.98),rgba(14,23,41,.98)); border:1px solid rgba(164,180,218,.13); border-radius:16px; }
+    .gold { color:var(--gold); text-shadow:0 0 20px rgba(246,207,101,.12); }
+    .input { width:100%; background:#080f20; border:1px solid #35435f; color:#f8faff; border-radius:11px; padding:12px 14px; font-size:13px; outline:none; }
+    .input:focus { border-color:#8b7aff; box-shadow:0 0 0 3px #8b7aff20; }
+    .btn-primary { background:linear-gradient(110deg,#7967f5,#4778f5); color:white; font-weight:700; border-radius:11px; padding:12px 15px; transition:.2s; }
+    .btn-primary:hover:not(:disabled) { filter:brightness(1.1); transform:translateY(-1px); }
+    .btn-secondary { background:#17233b; border:1px solid #35435f; color:#dce4f7; border-radius:11px; padding:10px 14px; }
+    .btn-secondary:hover { border-color:#8b7aff; }
+    button:disabled { opacity:.45; cursor:not-allowed; }
+    .pill { display:inline-flex; align-items:center; gap:7px; border-radius:999px; padding:7px 10px; font-size:11px; font-weight:700; white-space:nowrap; }
+    .pill::before { content:''; width:7px;height:7px;border-radius:50%;background:currentColor; }
+    .pill.ok { background:#05966920; color:#a7f3d0; border:1px solid #6ee7b733; }
+    .pill.warn { background:#b4530920; color:#ffd19b; border:1px solid #ffbf6933; }
+    .warning { padding:12px 14px; border:1px solid #ffbf6955; background:#7c431433; color:#ffd19b; border-radius:11px; font-size:12px; line-height:1.6; }
+    .message { overflow-wrap:anywhere; padding:12px 14px; border:1px solid #8b7aff33; background:#5d53c81f; border-radius:11px; font-size:12px; line-height:1.65; }
+    .view-section { display:none; }
+    .view-section.active { display:block; animation:fadein .22s ease; }
+    .mono { font-family:ui-monospace,SFMono-Regular,Consolas,monospace; overflow-wrap:anywhere; }
+    .table-wrap { overflow-x:auto; }
+    table { min-width:650px; }
+    th { color:#8290ab; font-weight:600; white-space:nowrap; }
+    td,th { padding:13px 12px; border-bottom:1px solid rgba(164,180,218,.10); }
+    .tx-link { color:#a99cff; text-decoration:none; }
+    .tx-link:hover { text-decoration:underline; }
+    .hidden { display:none !important; }
+    #toast { transition:opacity .25s,transform .25s; }
+    @keyframes fadein { from { opacity:0; transform:translateY(5px) } to { opacity:1; transform:translateY(0) } }
+    @media(max-width:1023px) { .sidebar { position:fixed; inset:0 auto 0 0; z-index:40; transform:translateX(-105%); transition:transform .24s; } .sidebar.open { transform:translateX(0); } #sidebar-overlay.show { display:block; } }
+    @media(min-width:1024px) { .sidebar { position:sticky; top:0; height:100vh; } }
+    @media(max-width:640px) { .main-header { padding-left:14px!important;padding-right:14px!important; } #main-viewport { padding:16px!important; } .metric { padding:17px!important; } .hero { padding:20px!important; } }
+  </style>
+</head>
+<body>
+  <div id="sidebar-overlay" class="hidden fixed inset-0 bg-black/60 z-30" onclick="toggleSidebar(false)"></div>
+  <div id="toast" class="fixed bottom-5 right-5 z-50 max-w-sm translate-y-6 opacity-0 pointer-events-none bg-dark-800 border border-dark-600 text-white px-4 py-3 rounded-xl shadow-2xl flex items-start gap-3">
+    <i id="toast-icon" class="fa-solid fa-circle-info text-indigo-300 mt-0.5"></i><div><h4 id="toast-title" class="font-semibold text-sm">Notification</h4><p id="toast-msg" class="text-xs text-gray-400 mt-1">—</p></div>
+  </div>
+
+  <div class="shell flex">
+    <aside id="sidebar" class="sidebar flex flex-col shrink-0">
+      <div class="p-5 flex items-center gap-3 border-b border-dark-700/60">
+        <div class="brandmark">H</div><div class="min-w-0"><div class="font-extrabold tracking-tight text-white">HisseinCoin <span class="text-xs text-gold-400">HSC</span></div><p class="text-[11px] text-gray-400 mt-1">Portefeuille Web3</p></div>
+        <button class="ml-auto lg:hidden text-gray-400 p-2" onclick="toggleSidebar(false)" aria-label="Fermer le menu"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <nav class="flex-1 px-3 py-5 space-y-1 overflow-y-auto">
+        <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-btn active"><i class="fa-solid fa-chart-pie w-5 text-center"></i><span>Tableau de bord</span></button>
+        <button onclick="switchTab('send')" id="nav-send" class="nav-btn"><i class="fa-solid fa-paper-plane w-5 text-center"></i><span>Envoyer</span></button>
+        <button onclick="switchTab('receive')" id="nav-receive" class="nav-btn"><i class="fa-solid fa-qrcode w-5 text-center"></i><span>Recevoir</span></button>
+        <button data-switch-tab="transactions" id="nav-transactions" class="nav-btn"><i class="fa-solid fa-right-left w-5 text-center"></i><span>Transactions</span></button>
+        <button onclick="switchTab('wallets')" id="nav-wallets" class="nav-btn"><i class="fa-solid fa-wallet w-5 text-center"></i><span>Portefeuille</span></button>
+        <button onclick="switchTab('explorer')" id="nav-explorer" class="nav-btn"><i class="fa-solid fa-cubes w-5 text-center"></i><span>Explorateur</span></button>
+        <button onclick="switchTab('settings')" id="nav-settings" class="nav-btn"><i class="fa-solid fa-gear w-5 text-center"></i><span>Paramètres</span></button>
+      </nav>
+      <div class="p-4 border-t border-dark-700/60"><div class="rounded-xl p-3 bg-dark-900/80 border border-dark-700/60 space-y-2">
+        <div class="flex justify-between items-center gap-2"><span id="sidebar-network" class="pill warn">Réseau non vérifié</span><span id="sidebar-chainid" class="text-[10px] text-gray-500 mono">—</span></div>
+        <div class="text-[10px] text-gray-400">Contrat HSC</div><a target="_blank" rel="noreferrer" id="sidebar-contract" class="text-[11px] text-indigo-300 mono tx-link" href="https://sepolia.etherscan.io/address/0x53Ddd8b956180327374e698194c5005e9aa8a397">0x53Dd...8a397</a>
+      </div></div>
+    </aside>
+
+    <div class="flex-1 min-w-0 flex flex-col min-h-screen">
+      <header class="main-header h-16 shrink-0 bg-dark-800/80 backdrop-blur border-b border-dark-700/70 px-6 flex items-center justify-between gap-3 sticky top-0 z-20">
+        <div class="flex items-center gap-3 min-w-0"><button onclick="toggleSidebar()" class="lg:hidden text-gray-400 hover:text-white p-2" aria-label="Ouvrir le menu"><i class="fa-solid fa-bars"></i></button><div class="hidden sm:block relative w-64 xl:w-96"><i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-xs text-gray-500"></i><input id="global-search" class="input pl-9 py-2" placeholder="Adresse, transaction ou bloc…" onkeydown="if(event.key==='Enter')handleGlobalSearch(this.value)" /><button onclick="handleGlobalSearch(document.getElementById('global-search').value)" class="absolute right-1 top-1 bottom-1 px-3 rounded-lg text-[11px] text-gray-300 hover:bg-dark-700">Ouvrir</button></div></div>
+        <div class="flex items-center gap-2"><button onclick="showToast('Les alertes de ce prototype concernent les actions lancées depuis cette interface.','info','Notifications')" class="p-2.5 rounded-xl bg-dark-900 border border-dark-700 text-gray-400 hover:text-white" title="Notifications"><i class="fa-regular fa-bell"></i></button><button id="connect-wallet-btn" onclick="connectWallet()" class="flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:brightness-110 text-white text-xs font-semibold shadow-lg"><i class="fa-brands fa-ethereum"></i><span id="wallet-btn-text">Connecter MetaMask</span></button></div>
+      </header>
+
+      <main id="main-viewport" class="flex-1 p-4 md:p-8 space-y-6">
+        <div id="global-message" class="message hidden" role="status" aria-live="polite"></div>
+
+        <!-- DASHBOARD -->
+        <section id="view-dashboard" class="view-section active space-y-6">
+          <div class="hero rounded-2xl border border-indigo-500/20 p-6 flex flex-col md:flex-row justify-between md:items-center gap-5" style="background:radial-gradient(circle at 95% 0%,#7767f52a,transparent 35%),linear-gradient(110deg,#191d3b,#111a2d 65%,#10263b)">
+            <div><span id="hero-network" class="pill warn">Réseau non vérifié</span><h2 class="text-xl md:text-2xl font-extrabold mt-3">Bienvenue sur HisseinCoin Portal</h2><p class="text-xs md:text-sm text-gray-400 mt-2 max-w-2xl">Consulte ton solde, envoie des HSC et vérifie les opérations sur Ethereum Sepolia. Les données affichées sont lues sur le réseau lorsqu'il est connecté.</p></div>
+            <div class="flex gap-3 flex-wrap"><button onclick="switchTab('send')" class="btn-primary flex items-center gap-2 text-xs"><i class="fa-solid fa-paper-plane"></i> Envoyer HSC</button><button onclick="switchTab('receive')" class="btn-secondary flex items-center gap-2 text-xs"><i class="fa-solid fa-qrcode"></i> Recevoir</button></div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+            <div class="metric p-5"><i class="fa-solid fa-coins absolute right-4 top-4 text-3xl text-gold-400/20"></i><p class="text-xs text-gray-400">Mon solde HSC</p><h3 id="dash-hsc-balance" class="text-2xl font-extrabold gold mt-2">— HSC</h3><p class="text-[11px] text-gray-500 mt-2">Compte MetaMask connecté</p></div>
+            <div class="metric p-5"><i class="fa-brands fa-ethereum absolute right-4 top-4 text-3xl text-blue-400/20"></i><p class="text-xs text-gray-400">Solde ETH de test</p><h3 id="dash-eth-balance" class="text-2xl font-bold mt-2">— ETH</h3><p class="text-[11px] text-gray-500 mt-2">Utilisé pour les frais Sepolia</p></div>
+            <div class="metric p-5"><i class="fa-solid fa-right-left absolute right-4 top-4 text-3xl text-violet-400/20"></i><p class="text-xs text-gray-400">Transferts du contrat trouvés</p><h3 id="dash-tx-count" class="text-2xl font-bold mt-2">—</h3><p class="text-[11px] text-gray-500 mt-2">Journaux ERC-20 consultés</p></div>
+            <div class="metric p-5"><i class="fa-solid fa-shield-halved absolute right-4 top-4 text-3xl text-emerald-400/20"></i><p class="text-xs text-gray-400">Statut du jeton</p><h3 id="dash-token-status" class="text-xl font-bold text-gray-300 mt-2">À vérifier</h3><p id="dash-supply" class="text-[11px] text-gray-500 mt-2">Offre totale : —</p></div>
+          </div>
+          <div class="grid grid-cols-1 xl:grid-cols-3 gap-5">
+            <div class="card p-5 xl:col-span-1"><div class="flex justify-between items-center mb-5"><h3 class="font-bold text-sm">Transfert rapide</h3><i class="fa-solid fa-bolt text-gold-400"></i></div>
+              <label for="quick-to" class="block text-xs text-gray-400 mb-2">Adresse du destinataire</label><input id="quick-to" class="input" placeholder="0x…" oninput="validateRecipientField('quick')" />
+              <div id="quick-warning" class="warning hidden mt-3"></div>
+              <label for="quick-amount" class="block text-xs text-gray-400 mt-4 mb-2">Montant (HSC)</label><input id="quick-amount" class="input" type="number" min="0" step="any" placeholder="10" />
+              <button id="quick-send-btn" onclick="executeTransfer('quick')" class="btn-primary w-full mt-5 flex justify-center items-center gap-2"><i class="fa-solid fa-signature"></i> Vérifier et envoyer</button>
+              <p class="text-[11px] text-gray-500 mt-3">MetaMask te montrera les détails et les frais avant la signature. Ne confirme que si l'adresse et le montant sont corrects.</p>
+            </div>
+            <div class="card p-5 xl:col-span-2"><div class="flex items-center justify-between gap-3 mb-4"><h3 class="font-bold text-sm">Derniers transferts HSC</h3><button data-switch-tab="transactions" class="text-xs text-indigo-300 hover:underline">Voir l'historique</button></div><div class="table-wrap"><table class="w-full text-left text-xs"><thead><tr><th>Type</th><th>Montant</th><th>Adresse liée</th><th>Bloc</th><th>Statut</th></tr></thead><tbody id="recent-tx-tbody"><tr><td colspan="5" class="text-gray-500">Connecte MetaMask pour charger les journaux du contrat.</td></tr></tbody></table></div></div>
+          </div>
+        </section>
+
+        <!-- SEND -->
+        <section id="view-send" class="view-section space-y-6">
+          <div class="card max-w-2xl mx-auto p-6 md:p-8"><div class="flex items-center gap-3 mb-6"><div class="w-11 h-11 rounded-xl bg-indigo-500/15 text-indigo-300 grid place-items-center"><i class="fa-solid fa-paper-plane text-lg"></i></div><div><h2 class="text-lg font-bold">Envoyer des HisseinCoin</h2><p class="text-xs text-gray-400 mt-1">Transfert ERC-20 sur Sepolia Testnet</p></div></div>
+            <label class="block text-xs text-gray-400 mb-2" for="send-address">Adresse du portefeuille destinataire</label><div class="flex gap-2"><input id="send-address" class="input" placeholder="0x…" oninput="validateRecipientField('full')" /><button onclick="fillSampleRecipient()" class="btn-secondary shrink-0 text-xs">Account 6</button></div><div id="send-warning" class="warning hidden mt-3"></div>
+            <div class="flex items-center justify-between gap-2 mt-5 mb-2"><label for="send-qty" class="text-xs text-gray-400">Montant à transférer</label><span class="text-xs text-gray-500">Solde : <strong id="send-available-balance" class="gold">—</strong> HSC</span></div><div class="relative"><input id="send-qty" type="number" min="0" step="any" class="input pr-14" placeholder="10" /><span class="absolute right-4 top-3 text-xs font-bold text-gold-400">HSC</span></div>
+            <div class="mt-5 p-4 rounded-xl bg-dark-900/70 border border-dark-700 space-y-2 text-xs"><div class="flex justify-between gap-4"><span class="text-gray-400">Réseau</span><strong id="send-network-status">—</strong></div><div class="flex justify-between gap-4"><span class="text-gray-400">Contrat</span><a id="send-contract-link" target="_blank" rel="noreferrer" class="tx-link mono" href="https://sepolia.etherscan.io/address/0x53Ddd8b956180327374e698194c5005e9aa8a397">0x53Dd...8a397</a></div><div class="text-gray-500">Les frais réels seront calculés/présentés par MetaMask avant confirmation ; aucune estimation fixe n'est inventée ici.</div></div>
+            <button id="full-send-btn" onclick="executeTransfer('full')" class="btn-primary w-full mt-5 flex justify-center items-center gap-2"><i class="fa-solid fa-shield-halved"></i> Vérifier et envoyer avec MetaMask</button><p class="text-xs text-gray-500 mt-3">Les envois vers ton compte connecté, l'adresse du contrat et l'adresse nulle sont bloqués par l'interface.</p>
+          </div>
+        </section>
+
+        <!-- RECEIVE -->
+        <section id="view-receive" class="view-section space-y-6"><div class="card max-w-2xl mx-auto p-6 md:p-8 text-center"><div class="w-12 h-12 rounded-2xl mx-auto mb-4 bg-indigo-500/15 text-indigo-300 grid place-items-center"><i class="fa-solid fa-qrcode text-xl"></i></div><h2 class="text-lg font-bold">Recevoir des HSC</h2><p class="text-xs text-gray-400 mt-2">Partage l'adresse de ton portefeuille connecté. Ne partage pas la clé privée ni la phrase de récupération.</p><div id="receive-empty" class="mt-6 p-5 border border-dark-700 rounded-xl text-sm text-gray-400">Connecte MetaMask pour afficher ton adresse de réception.</div><div id="receive-content" class="hidden mt-5"><div id="receive-qr" class="mx-auto bg-white rounded-xl p-3 w-fit min-h-[170px] min-w-[170px] grid place-items-center"></div><div class="mt-5 p-3 rounded-xl bg-dark-900 border border-dark-700 flex flex-col sm:flex-row gap-3 items-center"><code id="my-wallet-addr" class="mono text-xs text-gray-300 break-all text-left flex-1"></code><button onclick="copyMyAddress()" class="btn-primary shrink-0"><i class="fa-regular fa-copy mr-2"></i>Copier l'adresse</button></div><p class="warning text-left mt-4">N'envoie que des actifs destinés au réseau Ethereum Sepolia. Cette adresse est celle de ton portefeuille, pas celle du contrat HisseinCoin.</p></div></div></section>
+
+        <!-- TRANSACTIONS -->
+        <section id="view-transactions" class="view-section space-y-6"><div class="card p-5 md:p-6"><div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-5"><div><h2 class="text-lg font-bold">Historique des transferts ERC-20</h2><p class="text-xs text-gray-400 mt-1">Données issues des événements du contrat sur Sepolia ; ce sont les transferts du jeton, pas toutes les transactions ETH du portefeuille.</p></div><button onclick="loadTransferHistory(true)" class="btn-secondary text-xs"><i class="fa-solid fa-rotate mr-2"></i>Actualiser</button></div><div class="flex flex-wrap gap-2 mb-4"><button onclick="filterTransactions('ALL')" id="filter-all" class="btn-primary text-xs">Tous les transferts</button><button onclick="filterTransactions('SENT')" id="filter-sent" class="btn-secondary text-xs">Envoyés par moi</button><button onclick="filterTransactions('RECEIVED')" id="filter-rec" class="btn-secondary text-xs">Reçus par moi</button></div><p id="history-status" class="text-xs text-gray-500 mb-3">Connecte MetaMask pour interroger la blockchain.</p><div class="table-wrap"><table class="w-full text-left text-xs"><thead><tr><th>Bloc</th><th>Sens</th><th>Montant</th><th>De</th><th>Vers</th><th>Transaction</th></tr></thead><tbody id="full-tx-tbody"><tr><td colspan="6" class="text-gray-500">Aucun historique chargé.</td></tr></tbody></table></div></div></section>
+
+        <!-- WALLETS -->
+        <section id="view-wallets" class="view-section space-y-6"><div class="card p-5 md:p-6"><h2 class="text-lg font-bold">Portefeuille connecté</h2><p class="text-xs text-gray-400 mt-1">Les soldes sont interrogés sur le réseau actif. Les autres comptes ne sont affichés que comme adresse de réception connue, pas comme des portefeuilles connectés automatiquement.</p><div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-5"><div class="metric p-5"><div class="flex justify-between gap-3"><span class="text-xs text-gray-400">Mon compte MetaMask</span><span id="wallet-network-pill" class="pill warn">Non connecté</span></div><code id="wallet-address" class="mono block text-sm mt-3 break-all">—</code><div class="mt-4 pt-4 border-t border-dark-700 flex justify-between text-xs"><span class="text-gray-400">Solde HSC</span><strong id="wallet-hsc" class="gold">—</strong></div><div class="mt-2 flex justify-between text-xs"><span class="text-gray-400">Solde ETH</span><strong id="wallet-eth">—</strong></div></div><div class="metric p-5"><span class="text-xs text-gray-400">Adresse de test Account 6</span><code id="account6-address" class="mono block text-sm mt-3 break-all">0x3326a23758bf457FA4c228c0C140bDFCAD4eA0c9</code><div class="mt-4 pt-4 border-t border-dark-700 flex justify-between text-xs"><span class="text-gray-400">Solde HSC actuel</span><strong id="account6-hsc" class="gold">—</strong></div><button onclick="useAccount6Recipient()" class="btn-secondary w-full mt-4 text-xs">Utiliser comme destinataire</button></div><div class="metric p-5 md:col-span-2"><span class="text-xs text-gray-400">Adresse du contrat HisseinCoin</span><code class="mono block text-sm mt-3 break-all">0x53Ddd8b956180327374e698194c5005e9aa8a397</code><div class="mt-4 flex flex-wrap gap-3"><a class="btn-secondary text-xs" target="_blank" rel="noreferrer" href="https://sepolia.etherscan.io/address/0x53Ddd8b956180327374e698194c5005e9aa8a397">Ouvrir sur Etherscan</a><button onclick="copyText(CONTRACT,'Adresse du contrat copiée.')" class="btn-secondary text-xs">Copier l'adresse</button></div><p class="text-xs text-gray-500 mt-3">Le contrat n'est pas un compte destinataire normal : les HSC envoyés à son adresse peuvent rester bloqués.</p></div></div></div></section>
+
+        <!-- EXPLORER -->
+        <section id="view-explorer" class="view-section space-y-6"><div class="card p-5 md:p-6"><div class="flex flex-col md:flex-row md:items-center justify-between gap-4"><div><h2 class="text-lg font-bold">Explorateur Sepolia</h2><p class="text-xs text-gray-400 mt-1">Recherche directe sur l'explorateur public Etherscan Sepolia.</p></div><span id="explorer-network-pill" class="pill warn">Réseau non vérifié</span></div><div class="flex flex-col sm:flex-row gap-2 mt-5"><input id="explorer-search" class="input" placeholder="Hash de transaction, adresse ou numéro de bloc" onkeydown="if(event.key==='Enter')searchExplorer()"/><button onclick="searchExplorer()" class="btn-primary shrink-0"><i class="fa-solid fa-magnifying-glass mr-2"></i>Rechercher</button></div><div class="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-5"><div class="metric p-4"><span class="text-xs text-gray-400">Dernier bloc consulté</span><h3 id="latest-block" class="text-xl font-bold mt-2">—</h3></div><div class="metric p-4"><span class="text-xs text-gray-400">Chain ID</span><h3 id="explorer-chainid" class="text-xl font-bold mt-2">—</h3></div><div class="metric p-4"><span class="text-xs text-gray-400">Connexion</span><h3 id="rpc-status" class="text-xl font-bold mt-2 text-gray-400">Non vérifiée</h3></div></div><div class="mt-6"><div class="flex items-center justify-between gap-3 mb-3"><h3 class="text-sm font-bold">Blocs récents</h3><button onclick="loadRecentBlocks()" class="btn-secondary text-xs">Actualiser</button></div><div class="table-wrap"><table class="w-full text-left text-xs"><thead><tr><th>Bloc</th><th>Hash</th><th>Transactions</th><th>Horodatage</th></tr></thead><tbody id="recent-blocks-tbody"><tr><td colspan="4" class="text-gray-500">Connecte MetaMask sur Sepolia pour charger les blocs.</td></tr></tbody></table></div></div></div></section>
+
+        <!-- SETTINGS -->
+        <section id="view-settings" class="view-section space-y-6"><div class="card max-w-3xl mx-auto p-5 md:p-7"><h2 class="text-lg font-bold">Paramètres et informations du jeton</h2><p class="text-xs text-gray-400 mt-1">Informations lues depuis le contrat lorsqu'elles sont disponibles.</p><div class="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-6"><div><label class="block text-xs text-gray-400 mb-2">Nom du jeton</label><input id="setting-name" readonly class="input" value="À charger"/></div><div><label class="block text-xs text-gray-400 mb-2">Symbole</label><input id="setting-symbol" readonly class="input" value="À charger"/></div><div><label class="block text-xs text-gray-400 mb-2">Décimales</label><input id="setting-decimals" readonly class="input" value="18 (attendu)"/></div><div><label class="block text-xs text-gray-400 mb-2">Offre totale</label><input id="setting-supply" readonly class="input" value="À charger"/></div><div class="sm:col-span-2"><label class="block text-xs text-gray-400 mb-2">Contrat ERC-20</label><input readonly class="input mono" value="0x53Ddd8b956180327374e698194c5005e9aa8a397"/></div><div><label class="block text-xs text-gray-400 mb-2">Réseau attendu</label><input readonly class="input" value="Sepolia Testnet"/></div><div><label class="block text-xs text-gray-400 mb-2">Chain ID attendu</label><input readonly class="input" value="11155111"/></div></div><div class="flex flex-wrap gap-3 mt-6"><button onclick="refreshAll()" class="btn-primary text-xs"><i class="fa-solid fa-rotate mr-2"></i>Actualiser les données</button><a target="_blank" rel="noreferrer" href="https://sepolia.etherscan.io/address/0x53Ddd8b956180327374e698194c5005e9aa8a397" class="btn-secondary text-xs">Vérifier le contrat</a></div><p class="warning mt-5">Projet universitaire sur un réseau de test. Ne fournis jamais ta phrase de récupération ou ta clé privée à cette application. Les opérations ne doivent être signées que si MetaMask affiche le bon compte, le bon contrat et le bon destinataire.</p></div></section>
+      </main>
+      <footer class="px-6 py-5 text-center text-[11px] text-gray-500 border-t border-dark-700/60">HisseinCoin · Projet universitaire Blockchain · Sepolia Testnet <span class="block mt-1">Les montants et historiques affichés sont issus du réseau lorsqu'ils ont pu être chargés.</span></footer>
+    </div>
+  </div>
+
+<script>
+(() => {
+  'use strict';
+
+  const CONTRACT = '0x53Ddd8b956180327374e698194c5005e9aa8a397';
+  const CONTRACT_LC = CONTRACT.toLowerCase();
+  const SEPOLIA = '0xaa36a7';
+  const SEPOLIA_BLOCK = 11919496;
+  const ACCOUNT6 = '0x3326a23758bf457FA4c228c0C140bDFCAD4eA0c9';
+  const ZERO = '0x0000000000000000000000000000000000000000';
+  const TRANSFER_TOPIC = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef';
+  const EXPLORER = 'https://sepolia.etherscan.io';
+  const LS_KEY = 'hisseincoin_local_submitted_txs_v1';
+  const $ = (id) => document.getElementById(id);
+  const state = { account: '', chainId: '', balance: null, ethBalance: null, supply: null, decimals: 18, name: 'HisseinCoin', symbol: 'HSC', logs: [], filter: 'ALL', sending: false };
+  let toastTimer;
+
+  function shortAddress(a) { return a && a.length > 12 ? `${a.slice(0,6)}…${a.slice(-4)}` : (a || '—'); }
+  function fmtNumber(value, max = 4) { return Number(value).toLocaleString('fr-FR', { maximumFractionDigits: max }); }
+  function fmtUnits(raw, decimals = 18, max = 6) {
+    const n = BigInt(raw);
+    const base = 10n ** BigInt(decimals);
+    const whole = n / base;
+    const fraction = (n % base).toString().padStart(decimals, '0').slice(0, max).replace(/0+$/, '');
+    return `${whole.toLocaleString('fr-FR')}${fraction ? ',' + fraction : ''}`;
+  }
+  function parseUnits(text, decimals = 18) {
+    const value = String(text).trim();
+    if (!/^(?:\d+(?:\.\d*)?|\.\d+)$/.test(value)) throw new Error('Montant invalide.');
+    const parts = value.split('.');
+    const whole = parts[0] || '0';
+    const frac = parts[1] || '';
+    if (frac.length > decimals) throw new Error(`Maximum ${decimals} décimales autorisées.`);
+    return BigInt(whole) * (10n ** BigInt(decimals)) + BigInt((frac + '0'.repeat(decimals)).slice(0, decimals) || '0');
+  }
+  function topicAddress(topic) { return '0x' + topic.slice(-40); }
+  const PUBLIC_RPCS = [
+    'https://sepolia.gateway.tenderly.co',
+    'https://ethereum-sepolia-rpc.publicnode.com',
+    'https://rpc.sepolia.org'
+  ];
+  const BLOCKSCOUT_API = 'https://eth-sepolia.blockscout.com/api/v2';
+  function requireProvider() {
+    if (!window.ethereum || typeof window.ethereum.request !== 'function') {
+      throw new Error('MetaMask est introuvable. Installe/active MetaMask puis réessaie.');
+    }
+  }
+  async function publicRpc(method, params = []) {
+    const errors = [];
+    for (const endpoint of PUBLIC_RPCS) {
+      try {
+        const response = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ jsonrpc: '2.0', id: Date.now(), method, params })
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const body = await response.json();
+        if (body.error) throw new Error(body.error.message || 'Erreur RPC');
+        return body.result;
+      } catch (error) {
+        errors.push(`${endpoint}: ${error.message || error}`);
+      }
+    }
+    throw new Error(`Tous les RPC Sepolia ont échoué : ${errors.join(' | ')}`);
+  }
+
+  async function fetchBlockscoutPages(firstUrl, maxPages = 12) {
+    const collected = [];
+    let nextUrl = firstUrl;
+    for (let page = 0; page < maxPages && nextUrl && collected.length < 600; page++) {
+      const response = await fetch(nextUrl, { headers: { Accept: 'application/json' } });
+      if (!response.ok) throw new Error(`Blockscout HTTP ${response.status}`);
+      const data = await response.json();
+      if (!data || !Array.isArray(data.items)) {
+        throw new Error('Réponse API Blockscout inattendue.');
+      }
+      collected.push(...data.items);
+      const params = data.next_page_params;
+      if (!params || typeof params !== 'object' || !Object.keys(params).length || !data.items.length) {
+        nextUrl = null;
+      } else {
+        const url = new URL(firstUrl);
+        Object.entries(params).forEach(([key, value]) => {
+          if (value !== null && value !== undefined) url.searchParams.set(key, String(value));
+        });
+        nextUrl = url.toString();
+      }
+    }
+    return collected;
+  }
+
+  function blockscoutAddress(entry) {
+    if (typeof entry === 'string') return entry;
+    if (!entry || typeof entry !== 'object') return '';
+    return entry.hash || entry.address_hash || entry.address || entry.hash_address || '';
+  }
+
+  function normalizeBlockscoutTransfer(item, tokenSpecific = false) {
+    const from = blockscoutAddress(item.from || item.from_address || item.sender);
+    const to = blockscoutAddress(item.to || item.to_address || item.receiver);
+    const tokenAddress = blockscoutAddress(item.token || item.token_address || item.token_contract);
+    const tokenSpecificEndpoint = tokenSpecific;
+    if (!from || !to) return null;
+    if (tokenAddress && tokenAddress.toLowerCase() !== CONTRACT_LC) return null;
+    if (!tokenAddress && !tokenSpecificEndpoint) return null;
+
+    const rawValue = item.total?.value ?? item.amount?.value ?? item.value ?? item.amount;
+    if (rawValue === null || rawValue === undefined) return null;
+    let units;
+    try { units = BigInt(String(rawValue)); } catch { return null; }
+
+    const decimals = Number(item.total?.decimals ?? item.token?.decimals ?? state.decimals);
+    const block = Number(item.block_number ?? item.block?.number ?? item.blockNumber ?? 0);
+    const hash = item.transaction_hash || item.tx_hash || item.transaction?.hash || item.hash;
+    if (!hash || !/^0x[a-fA-F0-9]{64}$/.test(hash)) return null;
+
+    const fromLc = from.toLowerCase();
+    const toLc = to.toLowerCase();
+    const me = (state.account || '').toLowerCase();
+    const direction = fromLc === ZERO.toLowerCase()
+      ? 'MINT'
+      : fromLc === me && me ? 'SENT'
+      : toLc === me && me ? 'RECEIVED'
+      : 'OTHER';
+
+    return {
+      hash, from, to, units: units.toString(),
+      amount: fmtUnits(units, Number.isFinite(decimals) ? decimals : state.decimals),
+      block, direction, status: 'Confirmée', onchain: true
+    };
+  }
+
+  async function loadBlockscoutTransferHistory() {
+    const errors = [];
+    let hadSuccessfulResponse = false;
+    const merged = new Map();
+
+    // Endpoint indexé par contrat du jeton : solution de secours quand le RPC a élagué les anciens journaux.
+    const tokenUrl = `${BLOCKSCOUT_API}/tokens/${CONTRACT}/transfers?type=ERC-20`;
+    try {
+      const items = await fetchBlockscoutPages(tokenUrl, 12);
+      hadSuccessfulResponse = true;
+      for (const item of items) {
+        const tx = normalizeBlockscoutTransfer(item, true);
+        if (tx) merged.set(`${tx.hash}:${tx.from.toLowerCase()}:${tx.to.toLowerCase()}:${tx.units}`, tx);
+      }
+      if (merged.size) return { items: [...merged.values()], source: 'Blockscout (historique du jeton)', partial: false };
+    } catch (error) { errors.push(`historique du jeton: ${error.message || error}`); }
+
+    // Second recours : transferts ERC-20 associés aux comptes connus, filtrés sur le contrat HSC.
+    const addresses = [...new Set([state.account, ACCOUNT6, CONTRACT].filter(Boolean).map(a => a.toLowerCase()))];
+    for (const address of addresses) {
+      try {
+        const url = `${BLOCKSCOUT_API}/addresses/${address}/token-transfers?type=ERC-20&token=${CONTRACT}`;
+        const items = await fetchBlockscoutPages(url, 8);
+        hadSuccessfulResponse = true;
+        for (const item of items) {
+          const tx = normalizeBlockscoutTransfer(item, false);
+          if (tx) merged.set(`${tx.hash}:${tx.from.toLowerCase()}:${tx.to.toLowerCase()}:${tx.units}`, tx);
+        }
+      } catch (error) { errors.push(`${address}: ${error.message || error}`); }
+    }
+
+    if (merged.size) return { items: [...merged.values()], source: 'Blockscout (comptes consultés)', partial: true };
+    if (hadSuccessfulResponse) return { items: [], source: 'Blockscout', partial: false };
+    throw new Error(errors.join(' | ') || 'L’API Blockscout est indisponible.');
+  }
+  function showToast(message, type = 'info', title = 'Notification') {
+    $('toast-title').textContent = title; $('toast-msg').textContent = message;
+    $('toast-icon').className = `fa-solid ${type === 'success' ? 'fa-circle-check text-emerald-400' : type === 'error' ? 'fa-triangle-exclamation text-red-400' : 'fa-circle-info text-indigo-300'} mt-0.5`;
+    $('toast').classList.remove('translate-y-6','opacity-0','pointer-events-none');
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => $('toast').classList.add('translate-y-6','opacity-0','pointer-events-none'), 4200);
+  }
+  function setMessage(message, type = 'info') {
+    const el = $('global-message'); el.textContent = message; el.classList.remove('hidden');
+    el.style.borderColor = type === 'error' ? '#ff858f66' : type === 'success' ? '#6ee7b755' : '#8b7aff33';
+    el.style.color = type === 'error' ? '#ffc3c8' : type === 'success' ? '#a7f3d0' : '#d9d5ff';
+  }
+  function clearMessage() { $('global-message').classList.add('hidden'); }
+  function setPill(el, text, ok) { el.textContent = text; el.className = `pill ${ok ? 'ok' : 'warn'}`; }
+  function etherscanTx(hash) { return `${EXPLORER}/tx/${hash}`; }
+  function etherscanAddress(address) { return `${EXPLORER}/address/${address}`; }
+  function showNetwork() {
+    const ok = state.chainId === SEPOLIA;
+    const label = ok ? (state.account ? 'Sepolia connecté' : 'Sepolia actif') : state.chainId ? 'Autre réseau' : 'Réseau non vérifié';
+    setPill($('sidebar-network'), label, ok);
+    setPill($('hero-network'), label, ok);
+    setPill($('explorer-network-pill'), label, ok);
+    $('sidebar-chainid').textContent = state.chainId === SEPOLIA ? '11155111' : state.chainId ? state.chainId : '—';
+    $('explorer-chainid').textContent = state.chainId === SEPOLIA ? '11155111' : state.chainId || '—';
+    $('send-network-status').textContent = ok ? 'Sepolia actif' : 'Sélectionne Sepolia';
+    $('send-network-status').className = ok ? 'text-emerald-300' : 'text-amber-300';
+    const btn = $('connect-wallet-btn');
+    $('wallet-btn-text').textContent = state.account ? shortAddress(state.account) : 'Connecter MetaMask';
+    btn.className = state.account && ok
+      ? 'flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-emerald-700 to-emerald-600 border border-emerald-400/50 hover:brightness-110 text-white text-xs font-semibold shadow-lg'
+      : 'flex items-center gap-2 px-3 sm:px-4 py-2 rounded-xl bg-gradient-to-r from-orange-600 to-amber-600 hover:brightness-110 text-white text-xs font-semibold shadow-lg';
+    $('rpc-status').textContent = ok ? 'Connecté' : state.chainId ? 'Mauvais réseau' : 'Non connecté';
+    $('rpc-status').className = `text-xl font-bold mt-2 ${ok ? 'text-emerald-300' : 'text-amber-300'}`;
+  }
+  async function rpc(method, params = []) {
+    const walletOnly = ['eth_requestAccounts', 'eth_sendTransaction', 'wallet_switchEthereumChain', 'personal_sign', 'eth_signTypedData_v4'];
+    if (window.ethereum && typeof window.ethereum.request === 'function') {
+      try {
+        return await window.ethereum.request({ method, params });
+      } catch (error) {
+        // Les opérations qui exigent une signature ne doivent jamais être relayées au RPC public.
+        if (walletOnly.includes(method)) throw error;
+        // Les appels de lecture peuvent réessayer via le RPC public Sepolia.
+        return publicRpc(method, params);
+      }
+    }
+    if (method === 'eth_accounts') return [];
+    if (walletOnly.includes(method)) {
+      throw new Error('MetaMask est introuvable. Installe/active MetaMask pour signer une transaction.');
+    }
+    return publicRpc(method, params);
+  }
+  async function callContract(selector, arg = '') {
+    const data = selector + arg;
+    return rpc('eth_call', [{ to: CONTRACT, data }, 'latest']);
+  }
+  async function readTokenBalance(address) {
+    const encoded = address.toLowerCase().replace('0x','').padStart(64,'0');
+    const raw = await callContract('0x70a08231', encoded);
+    return BigInt(raw);
+  }
+  async function readEthBalance(address) { return BigInt(await rpc('eth_getBalance', [address, 'latest'])); }
+  async function readTokenInfo() {
+    try { const raw = await callContract('0x313ce567'); state.decimals = Number(BigInt(raw)); } catch { state.decimals = 18; }
+    try { const raw = await callContract('0x18160ddd'); state.supply = BigInt(raw); } catch { state.supply = null; }
+    try { const raw = await callContract('0x06fdde03'); state.name = decodeAbiString(raw); } catch { state.name = 'HisseinCoin'; }
+    try { const raw = await callContract('0x95d89b41'); state.symbol = decodeAbiString(raw); } catch { state.symbol = 'HSC'; }
+    $('setting-name').value = state.name;
+    $('setting-symbol').value = state.symbol;
+    $('setting-decimals').value = String(state.decimals);
+    $('setting-supply').value = state.supply === null ? 'Indisponible' : `${fmtUnits(state.supply, state.decimals)} ${state.symbol}`;
+    $('dash-supply').textContent = state.supply === null ? 'Offre totale : indisponible' : `Offre totale : ${fmtUnits(state.supply, state.decimals)} ${state.symbol}`;
+    $('dash-token-status').textContent = state.supply === null ? 'Non vérifié' : 'ERC-20 détecté';
+    $('dash-token-status').className = `text-xl font-bold mt-2 ${state.supply === null ? 'text-amber-300' : 'text-emerald-300'}`;
+  }
+  function decodeAbiString(hex) {
+    const h = hex.startsWith('0x') ? hex.slice(2) : hex;
+    if (!h || h.length < 128) throw new Error('ABI court');
+    const offset = Number(BigInt('0x' + h.slice(0,64))) * 2;
+    const len = Number(BigInt('0x' + h.slice(offset, offset + 64)));
+    if (!Number.isFinite(len) || len < 0 || len > 256) throw new Error('Longueur ABI invalide');
+    const bytes = h.slice(offset + 64, offset + 64 + len * 2).match(/.{1,2}/g) || [];
+    return new TextDecoder().decode(new Uint8Array(bytes.map(x => parseInt(x,16))));
+  }
+  async function refreshAll() {
+    try {
+      const net = await rpc('eth_chainId'); state.chainId = net;
+      const accounts = await rpc('eth_accounts'); state.account = accounts && accounts[0] ? accounts[0] : '';
+      showNetwork();
+      if (net !== SEPOLIA) {
+        state.balance = null; state.ethBalance = null; renderBalances();
+        $('history-status').textContent = 'Sélectionne Sepolia dans MetaMask pour charger l’historique.';
+        return;
+      }
+      await readTokenInfo();
+      if (state.account) {
+        const [bal, eth] = await Promise.all([readTokenBalance(state.account), readEthBalance(state.account)]);
+        state.balance = bal; state.ethBalance = eth;
+      } else { state.balance = null; state.ethBalance = null; }
+      renderBalances();
+      const account6Bal = await readTokenBalance(ACCOUNT6).catch(() => null);
+      $('account6-hsc').textContent = account6Bal === null ? 'Indisponible' : `${fmtUnits(account6Bal, state.decimals)} ${state.symbol}`;
+      $('explorer-search').placeholder = 'Hash de transaction, adresse ou numéro de bloc';
+      $('latest-block').textContent = 'Actualisation…';
+      await loadRecentBlocks();
+      // L'historique du contrat est consultable même sans compte connecté grâce au RPC public.
+      await loadTransferHistory(false);
+      showNetwork();
+    } catch (error) {
+      setMessage(`Impossible d'actualiser les données : ${error.message || error}`, 'error');
+    }
+  }
+  function renderBalances() {
+    const hsc = state.balance === null ? '—' : fmtUnits(state.balance, state.decimals);
+    const eth = state.ethBalance === null ? '—' : fmtUnits(state.ethBalance, 18, 6);
+    $('dash-hsc-balance').textContent = `${hsc} HSC`;
+    $('dash-eth-balance').textContent = `${eth} ETH`;
+    $('send-available-balance').textContent = hsc;
+    $('wallet-address').textContent = state.account || 'Aucun compte connecté';
+    $('wallet-hsc').textContent = state.balance === null ? '—' : `${hsc} HSC`;
+    $('wallet-eth').textContent = state.ethBalance === null ? '—' : `${eth} ETH`;
+    setPill($('wallet-network-pill'), state.account ? (state.chainId === SEPOLIA ? 'Connecté' : 'Mauvais réseau') : 'Non connecté', Boolean(state.account && state.chainId === SEPOLIA));
+    $('my-wallet-addr').textContent = state.account || '';
+    $('receive-empty').classList.toggle('hidden', Boolean(state.account && state.chainId === SEPOLIA));
+    $('receive-content').classList.toggle('hidden', !(state.account && state.chainId === SEPOLIA));
+    showNetwork();
+    if (state.account && state.chainId === SEPOLIA) renderReceiveQR();
+  }
+  function renderReceiveQR() {
+    const holder = $('receive-qr');
+    holder.innerHTML = '';
+    if (window.QRCode) new QRCode(holder, { text: state.account, width: 160, height: 160, colorDark: '#0b1020', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
+    else holder.textContent = 'Adresse disponible ci-dessous';
+  }
+  async function connectWallet() {
+    try {
+      requireProvider();
+      const accounts = await rpc('eth_requestAccounts');
+      const net = await rpc('eth_chainId');
+      state.chainId = net; state.account = accounts && accounts[0] ? accounts[0] : '';
+      await refreshAll();
+      if (state.chainId !== SEPOLIA) showToast('Portefeuille connecté, mais le réseau choisi n’est pas Sepolia. Change le réseau pour utiliser HSC.', 'info', 'Réseau à vérifier');
+      else showToast('Portefeuille connecté et données du contrat actualisées.', 'success', 'MetaMask connecté');
+    } catch (error) {
+      showToast(error && error.code === 4001 ? 'Connexion refusée dans MetaMask.' : (error.message || 'Connexion impossible.'), 'error', 'Connexion');
+    }
+  }
+  async function switchNetwork() {
+    try {
+      requireProvider();
+      await rpc('wallet_switchEthereumChain', [{ chainId: SEPOLIA }]);
+      await refreshAll();
+      showToast('Réseau Sepolia sélectionné.', 'success', 'Réseau prêt');
+    } catch (error) {
+      if (error && error.code === 4902) showToast('Ajoute Sepolia dans MetaMask puis réessaie.', 'error', 'Réseau manquant');
+      else showToast(error && error.code === 4001 ? 'Changement de réseau annulé.' : (error.message || 'Changement de réseau impossible.'), 'error', 'Réseau');
+    }
+  }
+  function validateRecipientField(source) {
+    const inputId = source === 'quick' ? 'quick-to' : 'send-address';
+    const warnId = source === 'quick' ? 'quick-warning' : 'send-warning';
+    const btnId = source === 'quick' ? 'quick-send-btn' : 'full-send-btn';
+    const dest = $(inputId).value.trim().toLowerCase();
+    let message = '';
+    if (dest && !/^0x[a-f0-9]{40}$/.test(dest)) message = 'Cette adresse ne semble pas être une adresse Ethereum complète (42 caractères).';
+    else if (dest && state.account && dest === state.account.toLowerCase()) message = 'Envoi interdit : cette adresse est ton propre compte MetaMask.';
+    else if (dest && dest === CONTRACT_LC) message = 'Envoi interdit : cette adresse est le contrat HisseinCoin. Les jetons risquent d’y rester bloqués.';
+    else if (dest && dest === ZERO.toLowerCase()) message = 'Envoi interdit : l’adresse nulle n’est pas un destinataire valide.';
+    const warning = $(warnId); warning.textContent = message; warning.classList.toggle('hidden', !message);
+    const blocked = Boolean(message);
+    $(btnId).disabled = blocked || state.sending;
+    return !blocked;
+  }
+  function fillSampleRecipient() { $('send-address').value = ACCOUNT6; validateRecipientField('full'); }
+  function useAccount6Recipient() { switchTab('send'); fillSampleRecipient(); }
+  async function executeTransfer(source = 'full') {
+    if (state.sending) return;
+    const addressId = source === 'quick' ? 'quick-to' : 'send-address';
+    const amountId = source === 'quick' ? 'quick-amount' : 'send-qty';
+    const to = $(addressId).value.trim();
+    const qty = $(amountId).value.trim();
+    if (!state.account) { showToast('Connecte MetaMask avant un transfert.', 'error', 'Portefeuille requis'); return; }
+    try {
+      const currentNetwork = await rpc('eth_chainId');
+      const accounts = await rpc('eth_accounts');
+      if (currentNetwork !== SEPOLIA) { showToast('Sélectionne Sepolia dans MetaMask.', 'error', 'Mauvais réseau'); return; }
+      if (!accounts || !accounts[0]) { showToast('Reconnecte ton portefeuille.', 'error', 'Portefeuille'); return; }
+      if (accounts[0].toLowerCase() !== state.account.toLowerCase()) { await refreshAll(); showToast('Le compte MetaMask a changé. Vérifie à nouveau le formulaire.', 'info', 'Compte actualisé'); return; }
+      if (!validateRecipientField(source)) return;
+      if (!/^0x[a-fA-F0-9]{40}$/.test(to)) { showToast('Saisis une adresse Ethereum complète.', 'error', 'Adresse invalide'); return; }
+      const units = parseUnits(qty, state.decimals);
+      if (units <= 0n) throw new Error('Le montant doit être supérieur à zéro.');
+      if (state.balance === null || units > state.balance) throw new Error('Le solde HSC est insuffisant ou n’a pas pu être lu.');
+      // Vérification finale indépendante de l'état des champs.
+      const dest = to.toLowerCase();
+      if (dest === state.account.toLowerCase() || dest === CONTRACT_LC || dest === ZERO.toLowerCase()) throw new Error('Destinataire interdit : vérifie l’adresse saisie.');
+      const data = '0xa9059cbb' + dest.slice(2).padStart(64, '0') + units.toString(16).padStart(64, '0');
+      state.sending = true; $('quick-send-btn').disabled = true; $('full-send-btn').disabled = true;
+      showToast('Vérifie l’adresse, le montant et les frais dans MetaMask.', 'info', 'Signature requise');
+      const hash = await rpc('eth_sendTransaction', [{ from: state.account, to: CONTRACT, data }]);
+      saveLocalTx({ hash, from: state.account, to, amount: fmtUnits(units, state.decimals), status: 'En attente', submittedAt: new Date().toISOString() });
+      setMessage(`Transaction envoyée. Vérification en cours : ${hash}`);
+      showToast('Transaction soumise à Sepolia. En attente du résultat on-chain.', 'info', 'Transaction envoyée');
+      const receipt = await waitForReceipt(hash, 60000);
+      if (!receipt) {
+        showToast('La transaction n’est pas encore confirmée. Tu peux vérifier son hachage sur Etherscan.', 'info', 'Confirmation en attente');
+        setMessage(`Confirmation non détectée après 60 secondes. Vérifie le statut ici : ${etherscanTx(hash)}`);
+      } else if (BigInt(receipt.status) === 0n) {
+        updateLocalTxStatus(hash, 'Échec');
+        showToast('La transaction a échoué on-chain.', 'error', 'Transaction échouée');
+        setMessage(`Transaction échouée. Voir les détails : ${etherscanTx(hash)}`, 'error');
+      } else {
+        updateLocalTxStatus(hash, 'Confirmée');
+        showToast(`Transfert de ${fmtUnits(units, state.decimals)} HSC confirmé.`, 'success', 'Transfert confirmé');
+        setMessage(`Transfert confirmé sur Sepolia. ${hash}`, 'success');
+        $(addressId).value = ''; $(amountId).value = '';
+        validateRecipientField(source);
+      }
+      await refreshAll();
+      await loadTransferHistory(false);
+      if (source === 'full') switchTab('transactions');
+    } catch (error) {
+      if (error && error.code === 4001) showToast('Signature annulée dans MetaMask.', 'info', 'Transaction annulée');
+      else showToast(error.message || 'Le transfert n’a pas pu être préparé.', 'error', 'Transfert impossible');
+      setMessage(error.message || 'Le transfert n’a pas pu être préparé.', 'error');
+    } finally {
+      state.sending = false;
+      validateRecipientField('quick'); validateRecipientField('full');
+    }
+  }
+  async function waitForReceipt(hash, timeoutMs) {
+    const started = Date.now();
+    while (Date.now() - started < timeoutMs) {
+      const receipt = await rpc('eth_getTransactionReceipt', [hash]);
+      if (receipt) return receipt;
+      await new Promise(resolve => setTimeout(resolve, 2200));
+    }
+    return null;
+  }
+  function readLocalTxs() { try { return JSON.parse(localStorage.getItem(LS_KEY) || '[]'); } catch { return []; } }
+  function saveLocalTx(tx) {
+    const list = readLocalTxs().filter(x => x.hash !== tx.hash); list.unshift(tx);
+    try { localStorage.setItem(LS_KEY, JSON.stringify(list.slice(0,100))); } catch {}
+  }
+  function updateLocalTxStatus(hash, status) { const list = readLocalTxs().map(x => x.hash === hash ? {...x, status} : x); try { localStorage.setItem(LS_KEY, JSON.stringify(list)); } catch {} }
+  async function loadTransferHistory(showNotice = true) {
+    if (state.chainId !== SEPOLIA) {
+      $('history-status').textContent = 'Sélectionne Sepolia (Chain ID 11155111) pour lire l’historique on-chain.';
+      renderHistory([]);
+      return;
+    }
+
+    $('history-status').textContent = 'Lecture de l’historique du contrat…';
+    let rpcError = null;
+
+    // Première tentative : logs natifs via plusieurs RPC, par petits intervalles.
+    try {
+      const latest = Number(BigInt(await publicRpc('eth_blockNumber')));
+      const logs = [];
+      const chunk = 400;
+
+      for (let start = SEPOLIA_BLOCK; start <= latest; start += chunk) {
+        const end = Math.min(start + chunk - 1, latest);
+        const part = await publicRpc('eth_getLogs', [{
+          address: CONTRACT,
+          fromBlock: '0x' + start.toString(16),
+          toBlock: '0x' + end.toString(16),
+          topics: [TRANSFER_TOPIC]
+        }]);
+        logs.push(...part);
+        if (logs.length > 2000) break;
+      }
+
+      if (logs.length) {
+        state.logs = logs.map(log => {
+          const from = topicAddress(log.topics[1]);
+          const to = topicAddress(log.topics[2]);
+          const units = BigInt(log.data || '0x0');
+          const amount = fmtUnits(units, state.decimals);
+          const me = (state.account || '').toLowerCase();
+          const fromLc = from.toLowerCase();
+          const toLc = to.toLowerCase();
+          const direction = fromLc === ZERO.toLowerCase()
+            ? 'MINT'
+            : fromLc === me && me ? 'SENT'
+            : toLc === me && me ? 'RECEIVED'
+            : 'OTHER';
+          return { hash: log.transactionHash, from, to, units: units.toString(), amount, block: Number(BigInt(log.blockNumber)), direction, status: 'Confirmée', onchain: true };
+        }).sort((a, b) => b.block - a.block);
+
+        $('history-status').textContent = `${state.logs.length} événement(s) Transfer lus directement sur Sepolia jusqu’au bloc ${latest}.`;
+        renderHistory(state.logs);
+        renderRecentTransactions(state.logs);
+        $('dash-tx-count').textContent = String(state.logs.length);
+        return;
+      }
+
+      // Aucun résultat RPC : vérifier l’indexeur avant d’afficher un historique vide.
+      rpcError = new Error('Le RPC n’a retourné aucun journal.');
+    } catch (error) {
+      rpcError = error;
+    }
+
+    // Deuxième tentative : indexeur Blockscout. Il n’utilise pas eth_getLogs du RPC.
+    try {
+      $('history-status').textContent = 'Le RPC a limité l’accès aux anciens journaux ; essai via l’indexeur Blockscout…';
+      const indexed = await loadBlockscoutTransferHistory();
+      state.logs = indexed.items.map(tx => {
+        const me = (state.account || '').toLowerCase();
+        const fromLc = tx.from.toLowerCase();
+        const toLc = tx.to.toLowerCase();
+        const direction = fromLc === ZERO.toLowerCase()
+          ? 'MINT'
+          : fromLc === me && me ? 'SENT'
+          : toLc === me && me ? 'RECEIVED'
+          : 'OTHER';
+        return { ...tx, direction };
+      }).sort((a, b) => b.block - a.block);
+
+      if (state.logs.length) {
+        const detail = indexed.partial ? ' (historique partiel : comptes connus)' : '';
+        $('history-status').textContent = `${state.logs.length} transfert(s) récupéré(s) via ${indexed.source}${detail}.`;
+        renderHistory(state.logs);
+        renderRecentTransactions(state.logs);
+        $('dash-tx-count').textContent = String(state.logs.length);
+        return;
+      }
+
+      // Un indexeur accessible mais vide est différent d’une panne : afficher clairement la situation.
+      const local = readLocalTxs();
+      $('history-status').textContent = `Aucun transfert retourné par l’indexeur. Erreur RPC : ${rpcError?.message || rpcError}. Transactions locales de ce navigateur : ${local.length}.`;
+      renderLocalHistory(local);
+      if (showNotice) showToast('Aucun événement de transfert récupéré. Tu peux ouvrir le contrat sur Blockscout ou Etherscan pour vérifier son historique.', 'info', 'Historique vide');
+    } catch (indexError) {
+      const local = readLocalTxs();
+      $('history-status').textContent = `RPC indisponible (${rpcError?.message || rpcError}). Indexeur indisponible (${indexError.message || indexError}). Historique local de ce navigateur : ${local.length}.`;
+      renderLocalHistory(local);
+      if (showNotice) showToast('Les fournisseurs RPC et l’indexeur ne répondent pas. Consulte les transferts sur l’explorateur.', 'error', 'Historique indisponible');
+    }
+  }
+  function renderHistory(logs) {
+    const filtered = state.filter === 'ALL' ? logs : logs.filter(x => x.direction === state.filter);
+    const tbody = $('full-tx-tbody');
+    if (!filtered.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-gray-500">Aucun transfert correspondant trouvé dans les journaux consultés.</td></tr>'; return; }
+    tbody.innerHTML = filtered.slice(0,200).map(tx => `<tr><td><a class="tx-link mono" target="_blank" rel="noreferrer" href="${EXPLORER}/block/${tx.block}">#${tx.block}</a></td><td>${tx.direction === 'SENT' ? '<span class="text-rose-300">Envoyé</span>' : tx.direction === 'RECEIVED' ? '<span class="text-emerald-300">Reçu</span>' : tx.direction === 'MINT' ? '<span class="text-amber-300">Émission initiale</span>' : '<span class="text-gray-400">Autre transfert</span>'}</td><td class="gold font-bold">${tx.amount} HSC</td><td><a class="tx-link mono" target="_blank" rel="noreferrer" href="${etherscanAddress(tx.from)}">${shortAddress(tx.from)}</a></td><td><a class="tx-link mono" target="_blank" rel="noreferrer" href="${etherscanAddress(tx.to)}">${shortAddress(tx.to)}</a></td><td><a class="tx-link mono" target="_blank" rel="noreferrer" href="${etherscanTx(tx.hash)}">${shortAddress(tx.hash)}</a></td></tr>`).join('');
+  }
+  function renderLocalHistory(list) {
+    const tbody = $('full-tx-tbody');
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="6" class="text-gray-500">Aucune transaction locale sauvegardée.</td></tr>'; return; }
+    tbody.innerHTML = list.map(tx => `<tr><td>—</td><td>Envoyé (local)</td><td class="gold">${tx.amount} HSC</td><td><a class="tx-link mono" target="_blank" rel="noreferrer" href="${etherscanAddress(tx.from)}">${shortAddress(tx.from)}</a></td><td class="mono">${shortAddress(tx.to)}</td><td><a class="tx-link mono" target="_blank" rel="noreferrer" href="${etherscanTx(tx.hash)}">${shortAddress(tx.hash)}</a><span class="block text-gray-500 mt-1">${tx.status}</span></td></tr>`).join('');
+  }
+  function renderRecentTransactions(logs) {
+    const tbody = $('recent-tx-tbody');
+    const list = logs.slice(0,5);
+    if (!list.length) { tbody.innerHTML = '<tr><td colspan="5" class="text-gray-500">Aucun événement Transfer trouvé.</td></tr>'; return; }
+    tbody.innerHTML = list.map(tx => `<tr><td>${tx.direction === 'SENT' ? 'Envoyé' : tx.direction === 'RECEIVED' ? 'Reçu' : tx.direction === 'MINT' ? 'Émission' : 'Transfert'}</td><td class="gold font-bold">${tx.amount} HSC</td><td><a class="tx-link mono" target="_blank" rel="noreferrer" href="${etherscanAddress(tx.direction === 'SENT' ? tx.to : tx.from)}">${shortAddress(tx.direction === 'SENT' ? tx.to : tx.from)}</a></td><td><a class="tx-link" target="_blank" rel="noreferrer" href="${EXPLORER}/block/${tx.block}">#${tx.block}</a></td><td><span class="text-emerald-300">Confirmé</span></td></tr>`).join('');
+  }
+  function filterTransactions(type) {
+    state.filter = type;
+    for (const [id, value] of [['filter-all','ALL'],['filter-sent','SENT'],['filter-rec','RECEIVED']]) {
+      $(id).className = state.filter === value ? 'btn-primary text-xs' : 'btn-secondary text-xs';
+    }
+    renderHistory(state.logs);
+  }
+  function renderRecentTransactionsSafe() { renderRecentTransactions(state.logs); }
+  async function loadRecentBlocks() {
+    try {
+      const latestHex = await rpc('eth_blockNumber');
+      const latest = Number(BigInt(latestHex));
+      $('latest-block').textContent = latest.toLocaleString('fr-FR');
+      const blocks = await Promise.all([0,1,2].map(async offset => {
+        const n = latest - offset;
+        if (n < 0) return null;
+        return rpc('eth_getBlockByNumber', ['0x' + n.toString(16), false]);
+      }));
+      const rows = blocks.filter(Boolean).map(block => {
+        const number = Number(BigInt(block.number));
+        const date = new Date(Number(BigInt(block.timestamp)) * 1000).toLocaleString('fr-FR');
+        return `<tr><td><a class="tx-link mono" target="_blank" rel="noreferrer" href="${EXPLORER}/block/${number}">#${number}</a></td><td class="mono text-gray-400">${shortAddress(block.hash)}</td><td>${block.transactions.length}</td><td>${date}</td></tr>`;
+      }).join('');
+      $('recent-blocks-tbody').innerHTML = rows || '<tr><td colspan="4" class="text-gray-500">Aucun bloc retourné.</td></tr>';
+    } catch (error) {
+      $('latest-block').textContent = 'Indisponible';
+      $('recent-blocks-tbody').innerHTML = `<tr><td colspan="4" class="text-amber-300">Impossible de charger les blocs : ${escapeHtml(error.message || String(error))}</td></tr>`;
+    }
+  }
+  function switchTab(tab) {
+    document.querySelectorAll('.view-section').forEach(el => {
+      el.classList.remove('active');
+      el.style.display = 'none';
+    });
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    const view = $('view-' + tab);
+    const nav = $('nav-' + tab);
+    if (view) {
+      view.classList.add('active');
+      view.style.display = 'block';
+    }
+    if (nav) nav.classList.add('active');
+    toggleSidebar(false);
+    if (tab === 'transactions') loadTransferHistory(false);
+    if (tab === 'wallets') refreshAll().catch(() => {});
+    if (tab === 'explorer') loadRecentBlocks();
+  }
+  function toggleSidebar(force) {
+    const sidebar = $('sidebar'); const overlay = $('sidebar-overlay');
+    const open = typeof force === 'boolean' ? force : !sidebar.classList.contains('open');
+    sidebar.classList.toggle('open', open);
+    overlay.classList.toggle('show', open);
+    overlay.classList.toggle('hidden', !open);
+  }
+  async function copyText(text, successMessage = 'Copié.') {
+    try { await navigator.clipboard.writeText(text); showToast(successMessage,'success','Copié'); }
+    catch { showToast('La copie automatique a échoué. Sélectionne le texte manuellement.','error','Copie impossible'); }
+  }
+  function copyMyAddress() { if (!state.account) { showToast('Connecte MetaMask pour obtenir ton adresse de réception.','error','Portefeuille requis'); return; } copyText(state.account, 'Adresse du portefeuille copiée.'); }
+  function searchExplorer() {
+    const query = $('explorer-search').value.trim();
+    if (!query) { showToast('Entre une adresse, un hachage ou un numéro de bloc.','info','Recherche'); return; }
+    let url;
+    if (/^0x[a-fA-F0-9]{64}$/.test(query)) url = `${EXPLORER}/tx/${query}`;
+    else if (/^0x[a-fA-F0-9]{40}$/.test(query)) url = `${EXPLORER}/address/${query}`;
+    else if (/^\d+$/.test(query)) url = `${EXPLORER}/block/${query}`;
+    else { showToast('Format non reconnu. Utilise un hash 0x… de 66 caractères, une adresse 0x… de 42 caractères ou un numéro de bloc.','error','Recherche invalide'); return; }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+  function handleGlobalSearch(query) {
+    $('explorer-search').value = query;
+    const q = query.trim();
+    if (!q) { showToast('Entre une adresse, un hash ou un numéro de bloc.','info','Recherche'); return; }
+    switchTab('explorer'); searchExplorer();
+  }
+  function escapeHtml(text) { return String(text).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+  function onWalletChanged() {
+    refreshAll().catch(error => setMessage(error.message || 'Actualisation impossible.','error'));
+  }
+  async function start() {
+    // Garantir que le tableau de bord initial est visible.
+    document.querySelectorAll('.view-section').forEach(el => {
+      el.style.display = el.classList.contains('active') ? 'block' : 'none';
+    });
+    // Navigation de secours : les clics restent reliés aux fonctions du tableau de bord.
+    document.querySelectorAll('[data-switch-tab]').forEach(button => {
+      button.addEventListener('click', event => {
+        event.preventDefault();
+        switchTab(button.dataset.switchTab);
+      });
+    });
+    $('quick-to').addEventListener('input', () => validateRecipientField('quick'));
+    $('send-address').addEventListener('input', () => validateRecipientField('full'));
+    if (window.ethereum) {
+      window.ethereum.on?.('accountsChanged', onWalletChanged);
+      window.ethereum.on?.('chainChanged', onWalletChanged);
+    }
+    try { await refreshAll(); } catch {}
+  }
+
+  // Fonctions accessibles aux boutons HTML.
+  window.connectWallet = connectWallet;
+  window.switchNetwork = switchNetwork;
+  window.switchTab = switchTab;
+  window.toggleSidebar = toggleSidebar;
+  window.showToast = showToast;
+  window.executeTransfer = executeTransfer;
+  window.executeFullSend = () => executeTransfer('full');
+  window.fillSampleRecipient = fillSampleRecipient;
+  window.useAccount6Recipient = useAccount6Recipient;
+  window.copyMyAddress = copyMyAddress;
+  window.copyText = copyText;
+  window.refreshAll = refreshAll;
+  window.loadTransferHistory = loadTransferHistory;
+  window.filterTransactions = filterTransactions;
+  window.loadRecentBlocks = loadRecentBlocks;
+  window.searchExplorer = searchExplorer;
+  window.handleGlobalSearch = handleGlobalSearch;
+  window.validateRecipientField = validateRecipientField;
+  window.addEventListener('DOMContentLoaded', start);
+})();
+</script>
+</body>
+</html>
